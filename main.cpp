@@ -29,21 +29,41 @@ int main()
 {
     const int HEIGHT = 24;
     const int COLUMN = 40;
+    const int TRAIL_LENGTH = 8;
 
     clearScreen();
     hideCursor();
 
-    // green color
-    std::cout << "\033[32m";
-
-    for (int row = 1; row <= HEIGHT; ++row)
+    for (int pos = 1; pos <= HEIGHT + TRAIL_LENGTH; ++pos)
     {
         clearScreen();
-        moveCursor(row, COLUMN);
-        std::cout << "A";
-        std::cout.flush();
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+        for (int i = 0; i < TRAIL_LENGTH; ++i)
+        {
+            int row = pos - i;
+            if (row >= 1 && row <= HEIGHT)
+            {
+                moveCursor(row, COLUMN);
+
+                if (i == 0)
+                {
+                    std::cout << "\033[1;32m"; // Bright green for head
+                }
+                else if (i < 3)
+                {
+                    std::cout << "\033[32m"; // Normal green
+                }
+                else
+                {
+                    std::cout << "\033[2;32m"; // Dim green for tail
+                }
+
+                std::cout << "A";
+            }
+        }
+
+        std::cout.flush();
+        std::this_thread::sleep_for(std::chrono::milliseconds(150));
     }
 
     std::this_thread::sleep_for(std::chrono::seconds(1));
