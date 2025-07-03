@@ -20,23 +20,33 @@ void showCursor()
     std::cout.flush();
 }
 
+void moveCursor(int row, int col)
+{
+    std::cout << "\033[" << row << ";" << col << "H";
+}
+
 int main()
 {
+    const int HEIGHT = 24;
+    const int COLUMN = 40;
+
     clearScreen();
     hideCursor();
 
     // green color
     std::cout << "\033[32m";
 
-    std::cout << "Screen cleared and cursor hidden!" << std::endl;
-    std::cout << "Notice how clean this looks..." << std::endl;
+    for (int row = 1; row <= HEIGHT; ++row)
+    {
+        clearScreen();
+        moveCursor(row, COLUMN);
+        std::cout << "A";
+        std::cout.flush();
 
-    std::this_thread::sleep_for(std::chrono::seconds(3));
+        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    }
 
-    clearScreen();
-    std::cout << "Screen cleared again!" << std::endl;
-
-    std::this_thread::sleep_for(std::chrono::seconds(2));
+    std::this_thread::sleep_for(std::chrono::seconds(1));
 
     // reset everything
     std::cout << "\033[0m";
