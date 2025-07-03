@@ -41,23 +41,33 @@ int main()
     const int HEIGHT = 24;
     const int WIDTH = 80;
     const int TRAIL_LENGTH = 8;
-    const int NUM_COLUMNS = 10;
+    const int NUM_COLUMNS = 15;
+
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<> speedDist(1, 3);
+    std::uniform_int_distribution<> delayDist(0, 20);
 
     // array to track each column's position
     int columnPositions[NUM_COLUMNS];
+    int columnSpeeds[NUM_COLUMNS];
     int columnSpacing = WIDTH / NUM_COLUMNS;
 
     // initialize column positions
     for (int i = 0; i < NUM_COLUMNS; ++i)
     {
-        columnPositions[i] = 1;
+        columnPositions[i] = -delayDist(gen);
+        columnSpeeds[i] = speedDist(gen);
     }
 
     clearScreen();
     hideCursor();
 
+    std::cout << "Matrix Rain - Different speeds and timing!" << std::endl;
+    std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+
     // animate multiple columns
-    for (int frame = 0; frame <= 100; ++frame)
+    for (int frame = 0; frame <= 150; ++frame)
     {
         clearScreen();
 
@@ -65,35 +75,39 @@ int main()
         {
             int x = (col + 1) * columnSpacing;
 
-            for (int i = 0; i < TRAIL_LENGTH; ++i)
+            if (columnPositions[col] > 0)
             {
-                int row = columnPositions[col] - i;
-                if (row >= 1 && row <= HEIGHT)
+                for (int i = 0; i < TRAIL_LENGTH; ++i)
                 {
-                    moveCursor(row, x);
+                    int row = columnPositions[col] - i;
+                    if (row >= 1 && row <= HEIGHT)
+                    {
+                        moveCursor(row, x);
 
-                    if (i == 0)
-                    {
-                        std::cout << "\033[1;32m"; // Bright green for head
-                    }
-                    else if (i < 3)
-                    {
-                        std::cout << "\033[32m"; // Normal green
-                    }
-                    else
-                    {
-                        std::cout << "\033[2;32m"; // Dim green for tail
-                    }
+                        if (i == 0)
+                        {
+                            std::cout << "\033[1;32m"; // Bright green for head
+                        }
+                        else if (i < 3)
+                        {
+                            std::cout << "\033[32m"; // Normal green
+                        }
+                        else
+                        {
+                            std::cout << "\033[2;32m"; // Dim green for tail
+                        }
 
-                    std::cout << getRandomChar();
+                        std::cout << getRandomChar();
+                    }
                 }
             }
 
-            columnPositions[col]++;
+            columnPositions[col] += columnSpeeds[col];
 
             if (columnPositions[col] > HEIGHT + TRAIL_LENGTH)
             {
-                columnPositions[col] = 1;
+                columnPositions[col] = -delayDist(gen);
+                columnSpeeds[col] = speedDist(gen);
             }
         }
 
