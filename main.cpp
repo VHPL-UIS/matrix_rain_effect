@@ -2,123 +2,247 @@
 #include <thread>
 #include <chrono>
 #include <random>
+#include <cstring>
 
-void clearScreen()
+class SimpleMatrix
 {
-    std::cout << "\033[2J\033[H";
-    std::cout.flush();
-}
+private:
+    static const int WIDTH = 80;
+    static const int HEIGHT = 24;
+    static const int TRAIL_LENGTH = 12;
 
-void hideCursor()
-{
-    std::cout << "\033[?25l";
-    std::cout.flush();
-}
-
-void showCursor()
-{
-    std::cout << "\033[?25h";
-    std::cout.flush();
-}
-
-void moveCursor(int row, int col)
-{
-    std::cout << "\033[" << row << ";" << col << "H";
-}
-
-char getRandomChar()
-{
-    static std::random_device rd;
-    static std::mt19937 gen(rd());
-    static const char chars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*";
-    static std::uniform_int_distribution<> dis(0, sizeof(chars) - 2);
-
-    return chars[dis(gen)];
-}
-
-int main()
-{
-    const int HEIGHT = 24;
-    const int WIDTH = 80;
-    const int TRAIL_LENGTH = 8;
-    const int NUM_COLUMNS = 15;
-
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::uniform_int_distribution<> speedDist(1, 3);
-    std::uniform_int_distribution<> delayDist(0, 20);
-
-    // array to track each column's position
-    int columnPositions[NUM_COLUMNS];
-    int columnSpeeds[NUM_COLUMNS];
-    int columnSpacing = WIDTH / NUM_COLUMNS;
-
-    // initialize column positions
-    for (int i = 0; i < NUM_COLUMNS; ++i)
+    struct Cell
     {
-        columnPositions[i] = -delayDist(gen);
-        columnSpeeds[i] = speedDist(gen);
+        char character;
+        int intensity; // 0=invisible, 1=dim, 2=normal, 3=bright, 4=bold
+        bool isBold;
+    };
+
+    Cell screen[HEIGHT][WIDTH];
+    int drops[WIDTH];
+    int dropSpeed[WIDTH];
+    std::mt19937 rng;
+
+    const char *matrixChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*";
+    int numChars;
+
+public:
+    SimpleMatrix() : rng(std::chrono::steady_clock::now().time_since_epoch().count())
+    {
+        numChars = strlen(matrixChars);
+        initializeScreen();
     }
 
-    clearScreen();
-    hideCursor();
-
-    std::cout << "Matrix Rain - Different speeds and timing!" << std::endl;
-    std::this_thread::sleep_for(std::chrono::milliseconds(2000));
-
-    // animate multiple columns
-    for (int frame = 0; frame <= 150; ++frame)
+    void initializeScreen()
     {
-        clearScreen();
-
-        for (int col = 0; col < NUM_COLUMNS; ++col)
+        // clear screen
+        for (int y = 0; y < HEIGHT; ++y)
         {
-            int x = (col + 1) * columnSpacing;
-
-            if (columnPositions[col] > 0)
+            for (int x = 0; x < WIDTH; ++x)
             {
-                for (int i = 0; i < TRAIL_LENGTH; ++i)
+                screen[y][x].character = ' ';
+                screen[y][x].intensity = 0;
+                screen[y][x].isBold = false;
+            }
+        }
+
+        // initialize drops with random delays and speeds
+        for (int x = 0; x < WIDTH; ++x)
+        {
+            drops[x] = -(rng() % HEIGHT);   // random start delay
+            dropSpeed[x] = 1 + (rng() % 3); // speed 1-3
+        }
+    }
+
+    void clearScreen()
+    {
+        std::cout << "\033[2J\033[H";
+        std::cout.flush();
+    }
+
+    void hideCursor()
+    {
+        std::cout << "\033[?25l";
+        std::cout.flush();
+    }
+
+    void showCursor()
+    {
+        std::cout << "\033[?25h";
+        std::cout.flush();
+    }
+
+    void setColor(int intensity, bool isBold)
+    {
+        if (intensity == 0)
+        {
+            std::cout << "\033[30m"; // Black (invisible)
+        }
+        else if (intensity == 1)
+        {
+            std::cout << "\033[2;32m"; // Dim green
+        }
+        else if (intensity == 2)
+        {
+            std::cout << "\033[32m"; // Normal green
+        }
+        else if (intensity == 3)
+        {
+            std::cout << "\033[1;32m"; // Bright green
+        }
+        else
+        {                              // intensity == 4
+            std::cout << "\033[1;92m"; // Bold bright green
+        }
+
+        if (isBold && intensity > 1)
+        {
+            std::cout << "\033[1m"; // Make it bold
+        }
+    }
+
+    void resetColor()
+    {
+        std::cout << "\033[0m";
+    }
+
+    char getRandomChar()
+    {
+        return matrixChars[rng() % numChars];
+    }
+
+    void update()
+    {
+        // Clear screen array
+        for (int y = 0; y < HEIGHT; ++y)
+        {
+            for (int x = 0; x < WIDTH; ++x)
+            {
+                screen[y][x].character = ' ';
+                screen[y][x].intensity = 0;
+                screen[y][x].isBold = false;
+            }
+        }
+
+        // Update each column
+        for (int x = 0; x < WIDTH; ++x)
+        {
+            // Draw trail
+            for (int i = 0; i < TRAIL_LENGTH; ++i)
+            {
+                int y = drops[x] - i;
+                if (y >= 0 && y < HEIGHT)
                 {
-                    int row = columnPositions[col] - i;
-                    if (row >= 1 && row <= HEIGHT)
+                    int intensity;
+                    if (i == 0)
                     {
-                        moveCursor(row, x);
+                        // Head of the drop - brightest
+                        intensity = 4;
+                        screen[y][x].isBold = (rng() % 3 == 0); // 33% chance of bold
+                    }
+                    else if (i < 3)
+                    {
+                        // Near head - bright
+                        intensity = 3;
+                        screen[y][x].isBold = (rng() % 5 == 0); // 20% chance of bold
+                    }
+                    else if (i < 8)
+                    {
+                        // Middle - normal
+                        intensity = 2;
+                        screen[y][x].isBold = (rng() % 8 == 0); // 12.5% chance of bold
+                    }
+                    else if (i < 12)
+                    {
+                        // Fading - dim
+                        intensity = 1;
+                        screen[y][x].isBold = false;
+                    }
+                    else
+                    {
+                        // Very faint - barely visible
+                        intensity = (rng() % 2); // Random between 0 and 1
+                        screen[y][x].isBold = false;
+                    }
 
-                        if (i == 0)
-                        {
-                            std::cout << "\033[1;32m"; // Bright green for head
-                        }
-                        else if (i < 3)
-                        {
-                            std::cout << "\033[32m"; // Normal green
-                        }
-                        else
-                        {
-                            std::cout << "\033[2;32m"; // Dim green for tail
-                        }
+                    screen[y][x].character = getRandomChar();
+                    screen[y][x].intensity = intensity;
 
-                        std::cout << getRandomChar();
+                    // Add some random flickering
+                    if (rng() % 20 == 0)
+                    {
+                        screen[y][x].intensity = std::max(0, screen[y][x].intensity - 1);
                     }
                 }
             }
 
-            columnPositions[col] += columnSpeeds[col];
+            // Move drop
+            drops[x] += dropSpeed[x];
 
-            if (columnPositions[col] > HEIGHT + TRAIL_LENGTH)
+            // Reset if off screen
+            if (drops[x] > HEIGHT + TRAIL_LENGTH)
             {
-                columnPositions[col] = -delayDist(gen);
-                columnSpeeds[col] = speedDist(gen);
+                drops[x] = -(rng() % 20);
+                dropSpeed[x] = 1 + (rng() % 3);
             }
+        }
+    }
+
+    void render()
+    {
+        std::cout << "\033[H"; // Move to top-left
+
+        for (int y = 0; y < HEIGHT - 1; ++y)
+        {
+            for (int x = 0; x < WIDTH; ++x)
+            {
+                if (screen[y][x].intensity > 0)
+                {
+                    setColor(screen[y][x].intensity, screen[y][x].isBold);
+                    std::cout << screen[y][x].character;
+                    std::cout << "\033[0m"; // Reset formatting after each character
+                }
+                else
+                {
+                    std::cout << ' ';
+                }
+            }
+            std::cout << '\n';
         }
 
         std::cout.flush();
-        std::this_thread::sleep_for(std::chrono::milliseconds(200));
     }
 
-    // reset everything
-    std::cout << "\033[0m";
-    showCursor();
-    clearScreen();
+    void run()
+    {
+        clearScreen();
+        hideCursor();
+
+        std::cout << "Full Screen Matrix Rain!\n";
+        std::cout.flush();
+        std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+
+        auto startTime = std::chrono::steady_clock::now();
+        auto duration = std::chrono::seconds(30);
+
+        while (std::chrono::steady_clock::now() - startTime < duration)
+        {
+            update();
+            render();
+            std::this_thread::sleep_for(std::chrono::milliseconds(80));
+        }
+
+        showCursor();
+        resetColor();
+        clearScreen();
+        std::cout << "Matrix effect completed!\n";
+    }
+};
+
+int main()
+{
+    SimpleMatrix matrix;
+    matrix.run();
 
     return 0;
 }
