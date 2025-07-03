@@ -39,45 +39,67 @@ char getRandomChar()
 int main()
 {
     const int HEIGHT = 24;
-    const int COLUMN = 40;
+    const int WIDTH = 80;
     const int TRAIL_LENGTH = 8;
+    const int NUM_COLUMNS = 10;
+
+    // array to track each column's position
+    int columnPositions[NUM_COLUMNS];
+    int columnSpacing = WIDTH / NUM_COLUMNS;
+
+    // initialize column positions
+    for (int i = 0; i < NUM_COLUMNS; ++i)
+    {
+        columnPositions[i] = 1;
+    }
 
     clearScreen();
     hideCursor();
 
-    for (int pos = 1; pos <= HEIGHT + TRAIL_LENGTH; ++pos)
+    // animate multiple columns
+    for (int frame = 0; frame <= 100; ++frame)
     {
         clearScreen();
 
-        for (int i = 0; i < TRAIL_LENGTH; ++i)
+        for (int col = 0; col < NUM_COLUMNS; ++col)
         {
-            int row = pos - i;
-            if (row >= 1 && row <= HEIGHT)
+            int x = (col + 1) * columnSpacing;
+
+            for (int i = 0; i < TRAIL_LENGTH; ++i)
             {
-                moveCursor(row, COLUMN);
+                int row = columnPositions[col] - i;
+                if (row >= 1 && row <= HEIGHT)
+                {
+                    moveCursor(row, x);
 
-                if (i == 0)
-                {
-                    std::cout << "\033[1;32m"; // Bright green for head
-                }
-                else if (i < 3)
-                {
-                    std::cout << "\033[32m"; // Normal green
-                }
-                else
-                {
-                    std::cout << "\033[2;32m"; // Dim green for tail
-                }
+                    if (i == 0)
+                    {
+                        std::cout << "\033[1;32m"; // Bright green for head
+                    }
+                    else if (i < 3)
+                    {
+                        std::cout << "\033[32m"; // Normal green
+                    }
+                    else
+                    {
+                        std::cout << "\033[2;32m"; // Dim green for tail
+                    }
 
-                std::cout << getRandomChar();
+                    std::cout << getRandomChar();
+                }
+            }
+
+            columnPositions[col]++;
+
+            if (columnPositions[col] > HEIGHT + TRAIL_LENGTH)
+            {
+                columnPositions[col] = 1;
             }
         }
 
         std::cout.flush();
-        std::this_thread::sleep_for(std::chrono::milliseconds(150));
+        std::this_thread::sleep_for(std::chrono::milliseconds(200));
     }
-
-    std::this_thread::sleep_for(std::chrono::seconds(1));
 
     // reset everything
     std::cout << "\033[0m";
