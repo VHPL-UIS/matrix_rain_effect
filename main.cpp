@@ -1,6 +1,7 @@
 #include <iostream>
 #include <thread>
 #include <chrono>
+#include <random>
 
 void clearScreen()
 {
@@ -23,6 +24,16 @@ void showCursor()
 void moveCursor(int row, int col)
 {
     std::cout << "\033[" << row << ";" << col << "H";
+}
+
+char getRandomChar()
+{
+    static std::random_device rd;
+    static std::mt19937 gen(rd());
+    static const char chars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*";
+    static std::uniform_int_distribution<> dis(0, sizeof(chars) - 2);
+
+    return chars[dis(gen)];
 }
 
 int main()
@@ -58,7 +69,7 @@ int main()
                     std::cout << "\033[2;32m"; // Dim green for tail
                 }
 
-                std::cout << "A";
+                std::cout << getRandomChar();
             }
         }
 
