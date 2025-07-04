@@ -6,6 +6,8 @@ A stunning C++ terminal application that recreates the iconic "digital rain" eff
 ![C++](https://img.shields.io/badge/C%2B%2B-11%2B-blue?style=for-the-badge&logo=cplusplus)
 ![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20macOS%20%7C%20Windows-lightgrey?style=for-the-badge)
 
+![RainBow Rain Effect](screenshots/rainbow.gif)
+
 ## ✨ Features
 
 ### 🎬 Authentic Matrix Experience
