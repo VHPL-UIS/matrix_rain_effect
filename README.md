@@ -43,24 +43,35 @@ A stunning C++ terminal application that recreates the iconic "digital rain" eff
 
 ### Compilation
 
+#### Using Makefile (Recommended):
+
+```bash
+make          # Build the project
+make run      # Build and run
+make clean    # Clean build artifacts
+make install  # Install system-wide (requires sudo)
+```
+
+#### Manual Compilation:
+
 **Linux/macOS:**
 
 ```bash
-g++ -std=c++11 -O2 matrix_rain.cpp -o matrix_rain
+g++ -std=c++11 -O2 main.cpp MatrixRain.cpp MenuInterface.cpp -o matrix_rain
 ./matrix_rain
 ```
 
 **Windows (MinGW):**
 
 ```cmd
-g++ -std=c++11 -O2 matrix_rain.cpp -o matrix_rain.exe
+g++ -std=c++11 -O2 main.cpp MatrixRain.cpp MenuInterface.cpp -o matrix_rain.exe
 matrix_rain.exe
 ```
 
 **Windows (Visual Studio):**
 
 ```cmd
-cl /std:c++11 matrix_rain.cpp
+cl /std:c++11 main.cpp MatrixRain.cpp MenuInterface.cpp
 matrix_rain.exe
 ```
 
@@ -99,6 +110,13 @@ The program will:
 - **Memory Usage**: Scales with terminal size (typical: <1MB)
 - **CPU Usage**: Minimal - optimized for efficiency
 - **Terminal Support**: Any ANSI-compatible terminal
+
+### Signal Handling
+
+- **SIGINT/SIGTERM handling** - Proper cleanup on interruption
+- **Cursor restoration** - Always restores terminal cursor
+- **Color reset** - Resets terminal colors on exit
+- **Screen cleanup** - Clears screen on unexpected termination
 
 ### Cross-Platform Implementation
 
